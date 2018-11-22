@@ -15,9 +15,8 @@ using System.Media;
 namespace cs_procman
 {
     public partial class Form1 : Form
-    {   
-        private Process[] list_proc;
-        private PropertyInfo[] props = typeof(Process).GetProperties();
+    {
+        private BindingList<Process> proc_list = new BindingList<Process>();
         private ManagementEventWatcher startProcessEW = new ManagementEventWatcher("SELECT * FROM Win32_ProcessStartTrace");
         private ManagementEventWatcher stopProcessEW = new ManagementEventWatcher("SELECT * FROM Win32_ProcessStopTrace");
         private SoundPlayer SP = new SoundPlayer();
@@ -25,16 +24,39 @@ namespace cs_procman
         {
             InitializeComponent();
             initProcessEventHandler();
-            list_proc = Process.GetProcesses();
-            string str;
-            for(int i = 0; i < list_proc.Length - 1; i++)
-            {
-                str = list_proc[i].ProcessName.Split(new string[] { "." }, StringSplitOptions.None)[0];
-                name_dgv.Rows.Add(str);
-            }
-            initDGV();
+            initName_DGV();
+            initProp_DGV();
         }
 
+        private void initName_DGV()
+        {
+            foreach (Process proc in Process.GetProcesses())
+            {
+                proc_list.Add(proc);
+            }
+            name_dgv.AutoGenerateColumns = false;
+            name_dgv.Columns.Clear();
+            name_dgv.ColumnCount = 2;
+            name_dgv.Columns[0].Name = "Process ID";
+            name_dgv.Columns[0].DataPropertyName = "Id";
+            name_dgv.Columns[1].Name = "Process Name";
+            name_dgv.Columns[1].DataPropertyName = "ProcessName";
+            name_dgv.DataSource = proc_list;
+        }
+        private void initProp_DGV()
+        {
+            prop_dgv.Hide();
+            prop_dgv.AutoGenerateColumns = false;
+            prop_dgv.ColumnCount = 2;
+            prop_dgv.Columns[0].Name = "Properties";
+            prop_dgv.Columns[1].Name = "Values";
+            prop_dgv.Columns[1].SortMode = DataGridViewColumnSortMode.NotSortable;
+
+            foreach (var prop in typeof(Process).GetProperties())
+            {
+                prop_dgv.Rows.Add(prop.Name, "");
+            }
+        }
         private void initProcessEventHandler()
         {
             startProcessEW.EventArrived += new EventArrivedEventHandler(onStartProcessEvent);
@@ -44,40 +66,46 @@ namespace cs_procman
         }
         private void onStartProcessEvent(object sender, EventArrivedEventArgs e)
         {
-            logEvent(e.NewEvent.Properties["ProcessName"].Value.ToString() + " has started");
-            addProcessToDGV(e.NewEvent.Properties["ProcessName"].Value.ToString());
             Console.WriteLine(e.NewEvent.Properties["ProcessName"].Value.ToString() + " has started");
+            logEvent(e.NewEvent.Properties["ProcessName"].Value.ToString() + "with id : " + e.NewEvent.Properties["ProcessId"].Value.ToString() + " has started");
+            addProcessToDGV(Convert.ToInt32(e.NewEvent.Properties["ProcessId"].Value));
             SP.SoundLocation = "../../mp3/light.wav";
             SP.Play();
         }
         private void onStopProcessEvent(object sender, EventArrivedEventArgs e)
         {
-            logEvent(e.NewEvent.Properties["ProcessName"].Value.ToString() + " has terminated");
-            removeProcessToDGV(e.NewEvent.Properties["ProcessName"].Value.ToString());
             Console.WriteLine(e.NewEvent.Properties["ProcessName"].Value.ToString() + " has terminated");
+            logEvent(e.NewEvent.Properties["ProcessName"].Value.ToString() + "with id : " + e.NewEvent.Properties["ProcessId"].Value.ToString() + " has terminated");
+            removeProcessToDGV(Convert.ToInt32(e.NewEvent.Properties["ProcessId"].Value));
             SP.SoundLocation = "../../mp3/long-expected.wav";
             SP.Play();
         }
-        private void addProcessToDGV(string str)
+        private void addProcessToDGV(int id)
         {
             if (InvokeRequired)
             {
-                this.Invoke(new Action<string>(addProcessToDGV), new object[] { str });
+                this.Invoke(new Action<int>(addProcessToDGV), new object[] { id });
                 return;
             }
-            str = str.Split(new string[] { "." }, StringSplitOptions.None)[0];
-            name_dgv.Rows.Add(str);
+            //if (Process.GetProcessById(id) == null)
+            try
+            {
+                proc_list.Add(Process.GetProcessById(id));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine(id +": This Process exited when you entered the program");
+            }   
         }
-        private void removeProcessToDGV(string str)
+        private void removeProcessToDGV(int id)
         {
             if (InvokeRequired)
             {
-                this.Invoke(new Action<string>(removeProcessToDGV), new object[] { str });
+                this.Invoke(new Action<int>(removeProcessToDGV), new object[] { id });
                 return;
             }
-            str = str.Split(new string[] {"."}, StringSplitOptions.None)[0];
-            //if(Process.GetProcessesByName(str).Length > 0)
-                name_dgv.Rows.RemoveAt(findIndexByName(str));
+
+            proc_list.Remove(proc_list.Where(i => i.Id == id).FirstOrDefault());
         }
         private int findIndexByName(string str)
         {
@@ -86,31 +114,22 @@ namespace cs_procman
             {
                 tmp.Add(row.Cells[0].Value.ToString());
             }
-
             return tmp.IndexOf(str);
-        }
-        
-        private void initDGV()
-        {
-            dgv.Hide();
-            foreach (var prop in props)
-            {
-                dgv.Rows.Add(prop.Name, "");
-            } 
         }
         private void listDetails(object sender, EventArgs e)
         {
-            if (!dgv.Visible) dgv.Show();
-            Process curr_proc = list_proc[name_dgv.CurrentRow.Index];
-            for(int i = 0; i < props.Length; i++)
+            if (!prop_dgv.Visible) prop_dgv.Show();
+            Process curr_proc = proc_list.Where(i => i.Id == Convert.ToInt32(name_dgv.CurrentRow.Cells[0].Value)).FirstOrDefault();
+            var props = typeof(Process).GetProperties();
+            for (int i = 0; i < props.Length; i++)
             {
                 try
                 {
-                    dgv.Rows[i].Cells[1].Value = props[i].GetValue(curr_proc);
+                    prop_dgv.Rows[i].Cells[1].Value = props[i].GetValue(curr_proc);
                 }
                 catch (Exception)
                 {
-                    dgv.Rows[i].Cells[1].Value = "Undefined";
+                    prop_dgv.Rows[i].Cells[1].Value = "Undefined";
                 }
             }
         }
