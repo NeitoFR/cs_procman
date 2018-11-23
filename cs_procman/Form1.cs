@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Management;
 using System.Media;
+using System.Security.Principal;
 
 namespace cs_procman
 {
@@ -26,6 +27,24 @@ namespace cs_procman
             initProcessEventHandler();
             initName_DGV();
             initProp_DGV();
+            
+            // Chart part
+            //Dictionary<string,long> list_top_process = new Dictionary<string,long>();
+            //list_top_process.Add(proc_list.Where(i => i.ProcessName), proc_list.Where(i => i.VirtualMemorySize64));
+            double i = 0;
+            ch_proc.Series.Add("Proc_Memory");
+
+            IEnumerable<Process> test = proc_list.OrderBy(item => item.PrivateMemorySize64);
+            foreach (var item in test)
+            {
+                if (i > 10) break;
+                Console.WriteLine("Process :"+item.ProcessName);
+                ch_proc.Series["Proc_Memory"].Points.AddXY(item.ProcessName, (double)item.PrivateMemorySize64);
+                ch_proc.Series["Proc_Memory"].LabelToolTip = "Coucou";
+            }
+
+            //ch_proc.Series["Proc_Memory"].Points.AddXY((double)test.First().VirtualMemorySize64, i++);
+            
         }
 
         private void initName_DGV()
@@ -118,6 +137,7 @@ namespace cs_procman
         }
         private void listDetails(object sender, EventArgs e)
         {
+            // Datagrid_view details -> update
             if (!prop_dgv.Visible) prop_dgv.Show();
             Process curr_proc = proc_list.Where(i => i.Id == Convert.ToInt32(name_dgv.CurrentRow.Cells[0].Value)).FirstOrDefault();
             var props = typeof(Process).GetProperties();
