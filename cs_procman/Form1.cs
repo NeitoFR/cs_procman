@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Management;
 using System.Media;
+using System.Security.Principal;
 
 namespace cs_procman
 {
@@ -20,6 +21,8 @@ namespace cs_procman
         private ManagementEventWatcher startProcessEW = new ManagementEventWatcher("SELECT * FROM Win32_ProcessStartTrace");
         private ManagementEventWatcher stopProcessEW = new ManagementEventWatcher("SELECT * FROM Win32_ProcessStopTrace");
         private SoundPlayer SP = new SoundPlayer();
+        private PopUp popUp = new PopUp();
+
         public Form1()
         {
             InitializeComponent();
@@ -59,10 +62,23 @@ namespace cs_procman
         }
         private void initProcessEventHandler()
         {
-            startProcessEW.EventArrived += new EventArrivedEventHandler(onStartProcessEvent);
-            startProcessEW.Start();
-            stopProcessEW.EventArrived += new EventArrivedEventHandler(onStopProcessEvent);
-            stopProcessEW.Start();
+            bool isElevated;
+            using (WindowsIdentity identity = WindowsIdentity.GetCurrent()) {
+                WindowsPrincipal principal = new WindowsPrincipal(identity);
+                isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+
+            if (isElevated) {
+                startProcessEW.EventArrived += new EventArrivedEventHandler(onStartProcessEvent);
+                startProcessEW.Start();
+                stopProcessEW.EventArrived += new EventArrivedEventHandler(onStopProcessEvent);
+                stopProcessEW.Start();
+            }
+            else
+            {
+                popUp.Show(this);
+                logEvent("Vous n'avez les droits nécessaires");
+            }
         }
         private void onStartProcessEvent(object sender, EventArrivedEventArgs e)
         {
