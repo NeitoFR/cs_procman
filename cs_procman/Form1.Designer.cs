@@ -1,5 +1,5 @@
 ﻿namespace cs_procman
-{
+{+
     partial class Form1
     {
         /// <summary>
@@ -84,6 +84,7 @@
             this.Controls.Add(this.name_dgv);
             this.Controls.Add(this.prop_dgv);
             this.Name = "Form1";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)(this.prop_dgv)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.name_dgv)).EndInit();
