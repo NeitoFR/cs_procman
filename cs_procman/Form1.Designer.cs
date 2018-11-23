@@ -1,5 +1,5 @@
 ﻿namespace cs_procman
-{+
+{
     partial class Form1
     {
         /// <summary>
@@ -30,7 +30,6 @@
         {
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.prop_dgv = new System.Windows.Forms.DataGridView();
             this.name_dgv = new System.Windows.Forms.DataGridView();
             this.log_textbox = new System.Windows.Forms.TextBox();
@@ -91,13 +90,6 @@
             this.prop_chart.Legends.Add(legend1);
             this.prop_chart.Location = new System.Drawing.Point(288, 275);
             this.prop_chart.Name = "prop_chart";
-            series1.ChartArea = "prop_chartarea";
-            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-            series1.Label = "test";
-            series1.Legend = "Legend1";
-            series1.Name = "prop_series";
-            series1.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Time;
-            this.prop_chart.Series.Add(series1);
             this.prop_chart.Size = new System.Drawing.Size(459, 236);
             this.prop_chart.TabIndex = 4;
             this.prop_chart.Text = "chart1";

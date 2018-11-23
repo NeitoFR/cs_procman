@@ -7,11 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
 using System.Diagnostics;
 using System.Reflection;
 using System.Management;
 using System.Media;
 using System.Security.Principal;
+using System.Threading;
 
 namespace cs_procman
 {
@@ -22,7 +24,6 @@ namespace cs_procman
         private ManagementEventWatcher stopProcessEW = new ManagementEventWatcher("SELECT * FROM Win32_ProcessStopTrace");
         private SoundPlayer SP = new SoundPlayer();
         private PopUp popUp = new PopUp();
-
         public Form1()
         {
             InitializeComponent();
@@ -160,17 +161,67 @@ namespace cs_procman
 
         private void displayGraph(object sender, EventArgs e)
         {
+            initNewBkgWrkr();
+            prop_chart.Series.Clear();
             try
             {
                 Int32.Parse(prop_dgv.CurrentRow.Cells[1].Value.ToString());
                 no_chart_label.Hide();
                 prop_chart.Show();
-
+                string series_name = prop_dgv.CurrentRow.Cells[0].Value.ToString();
+                prop_chart.Series.Add(series_name);
+                prop_chart.Series[series_name].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+                prop_chart.Series[series_name].XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Time;
+                prop_chart.Series[series_name].YValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Double;
+                Console.WriteLine(double.Parse(prop_dgv.CurrentRow.Cells[1].Value.ToString())+" "+DateTime.Now);
+                prop_chart.Series[series_name].Points.AddXY(DateTime.Now, double.Parse(prop_dgv.CurrentRow.Cells[1].Value.ToString()));
             }
             catch (FormatException)
             {
                 no_chart_label.Show();
                 prop_chart.Hide();
+            }
+        }
+        // Travail incomplet 
+        private void initNewBkgWrkr()
+        {
+            BackgroundWorker worker = new BackgroundWorker();
+
+            worker.DoWork += worker_DoWork;
+            worker.ProgressChanged += worker_ProgressChanged;
+            worker.RunWorkerCompleted += worker_RunWorkerCompleted;
+            worker.WorkerReportsProgress = true;
+            worker.WorkerSupportsCancellation = true;
+
+            worker.RunWorkerAsync(worker);
+        }
+
+        void worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+
+        }
+
+        void worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            int i = (int)e.UserState;
+            Console.WriteLine("Hello from worker" + i);
+        }
+
+        void worker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = (BackgroundWorker) e.Argument;
+            int i = 0;
+            while (true)
+            {
+                Thread.Sleep(1000);
+                worker.ReportProgress(i, new object[] { i });
+                Console.WriteLine("hello"+ i);
+                if (worker.CancellationPending)
+                {
+                    e.Cancel = true;
+                    Console.WriteLine("Closing Worker");
+                    return;
+                }
             }
         }
     }
