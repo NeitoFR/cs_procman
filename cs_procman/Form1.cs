@@ -161,7 +161,7 @@ namespace cs_procman
 
         private void displayGraph(object sender, EventArgs e)
         {
-            initNewBkgWrkr();
+            //initNewBkgWrkr();
             prop_chart.Series.Clear();
             try
             {
