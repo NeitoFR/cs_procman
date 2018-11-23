@@ -87,7 +87,6 @@ namespace cs_procman
                 this.Invoke(new Action<int>(addProcessToDGV), new object[] { id });
                 return;
             }
-            //if (Process.GetProcessById(id) == null)
             try
             {
                 proc_list.Add(Process.GetProcessById(id));
@@ -141,6 +140,22 @@ namespace cs_procman
                 return;
             }
             log_textbox.Text += "[" + DateTime.Now + "] : " + str + "\r\n";
+        }
+
+        private void displayGraph(object sender, EventArgs e)
+        {
+            try
+            {
+                Int32.Parse(prop_dgv.CurrentRow.Cells[1].Value.ToString());
+                no_chart_label.Hide();
+                prop_chart.Show();
+
+            }
+            catch (FormatException)
+            {
+                no_chart_label.Show();
+                prop_chart.Hide();
+            }
         }
     }
 }
